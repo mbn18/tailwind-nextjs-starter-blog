@@ -1,0 +1,91 @@
+---
+title: Claude Desktop + Filesystem MCP, Excellent Code Collaboration Setup
+date: '2025-06-27'
+tags: ['Claude', 'MCP', 'Filesystem MCP', 'prompt engineering']
+summary: 'In this article we introduce using Filesystem MCP with Claude Desktop to collaborate on code design with AI.'
+---
+
+So here is the use case. I wanted to collaborate with AI on code design.
+so within `Claude Desktop` I created a project with an appropriate system message and started a conversation with the AI.
+
+But here's the problem, the AI does not have access to my code and attaching documents or describing the situation is neither easy nor provides enough details.
+
+Lucky me, it's possible to add an MCP integration that can browse the local file system and add what is appropriate to the context.
+
+So let's do it:
+
+### Prerequisite:
+* Install [Claude Desktop](https://claude.ai/download) - currently not available on Linux 😡
+
+### Setup
+
+Open `Claude Desktop` and go to settings (on mac cmd+,)
+
+On the left side click **Extensions** and then click **Filesystem**
+
+![Claude Desktop settings](/static/images/claude_desktop_plus_filesystem_mcp/settings_extensions_tab.webp)
+
+Review the description, requirements and associated tools (know what can go wrong!) and click **Install**.
+
+When the installation is done, click **Add Directory** to allow the `MCP` to access your files. You can add more than one, for example the first can be documentation dir, the second can be a code repo.
+Then click **Save** and then toggle the top button to **Enabled**.
+
+![Claude Desktop Filesystem settings](/static/images/claude_desktop_plus_filesystem_mcp/settings_filesystem_tab.webp)
+
+Close the **Settings window** and restart `Claude Desktop`. Restart is not always necessary, but I had a few strange issues after configuring MCP servers and not restarting.
+
+Now let's test, ask the AI to **Summarize the README.md file content**
+
+![Claude Desktop file query](/static/images/claude_desktop_plus_filesystem_mcp/summarize-readme-file.webp)
+
+**It worked! but there are a few problems.**
+
+The first problem is that it does not know where to search for the file so extra tools are executed for the discovery:
+1. Execute the **list_allowed_directories** tool to find what directories exist.
+2. To save actions it executes the **search_files** tool on the root directory and receive permission denied (because it's not in the scope).
+3. Fall back and execute the **search_files** tool on both directories.
+4. Execute the **read_multiple_files** per shared directory (twice in our case).
+
+The second issue is that two files have been found and in most cases that's not what we want.
+
+So to solve this, I modified the query and reran (note that I added specific location to the prompt)
+
+![Claude Desktop file query 2](/static/images/claude_desktop_plus_filesystem_mcp/summarize-readme-file2.webp)
+
+Amazing! by prompting the requested directory, I got the right file and the tool count went down from **5 to 2**.
+
+But Stating the location or any other rule over and over again is cumbersome.
+
+This can be improved even further using **Projects**. So:
+1. Click **Projects** on `Claude Desktop` left column.
+2. Click **New Project** on the top-left side.
+3. Fill the **Name** and click **Create Project**
+4. Click **Set project instructions** and add your rules. Like Persona, project description and etc (now I will focus only on the Filesystem MCP):
+  * Append the following snippet and click **Save instructions**
+```
+### Filesystem MCP Directives ###
+
+1.  **Root Directory:** The operational root is `/Users/miki/Projects/SandBox/sample-api`. All relative paths originate from this location.
+2.  **File Filter:** Only process files with the `.md` extension.
+3.  **Ignore Rule:** All other files and directories that do not meet the `.md` criteria must be ignored.
+```
+
+Now let's run the query: `Summarize the README.md file content`
+
+![Claude Desktop file query 3](/static/images/claude_desktop_plus_filesystem_mcp/summarize-readme-file3.webp)
+
+Wonderful, the file was found in **one shot!**
+
+#### Note about the rules
+There are no perfect rules. It all depend on your scenario and needs. So experiment with the result and iterate.
+In my example I wrote some basic rules and asked the LLM to improve. Then picked the simple option.
+
+Here, is the prompt:
+```
+You are a prompt engineer that know how to fine tune MCP servers behavior using prompt.
+Improve the following prompt that will be used for the `Filesystem MCP` server:
+
+* Assume all files are under the `/Users/miki/Projects/SandBox/sample-api` directory and it is the root for any relative path.
+* Ignore files that do not end with the `md` extension
+* Any relative path should be considered as extension to the root directory
+```
