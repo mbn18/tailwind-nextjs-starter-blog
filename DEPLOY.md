@@ -42,3 +42,15 @@ After the static content was created, execute:
 ```shell
 wrangler pages deploy --commit-dirty=true
 ```
+
+## Resize images
+
+Convert to webp
+```
+magick header.png -qualtiy 60 header.webp
+```
+
+With Resize
+```
+magick header.png -qualtiy 60 -resize 1024x header.webp
+```
