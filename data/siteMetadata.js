@@ -9,7 +9,7 @@ const siteMetadata = {
   theme: 'system', // system, dark or light
   siteUrl: 'https://blog.epoch-source.com',
   siteRepo: 'https://github.com/mbn18/tailwind-nextjs-starter-blog',
-  siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
+  siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.svg`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
   // mastodon: 'https://mastodon.social/@mastodonuser',
   email: 'miki@epoch.co.il',
